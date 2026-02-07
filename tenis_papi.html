@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Inventario de Tenis</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+}
+.formulario, .lista {
+    background: white;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+input, button {
+    width: 100%;
+    margin: 5px 0;
+    padding: 8px;
+}
+.card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+.card img {
+    max-width: 100%;
+    border-radius: 5px;
+}
+.vendido {
+    background: #d4edda;
+}
+.botones button {
+    margin-top: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>👟 Inventario de Tenis</h1>
+
+<div class="formulario">
+    <h3>Agregar Tenis</h3>
+    <input type="text" id="nombre" placeholder="Nombre o marca del tenis">
+    <input type="number" id="costo" placeholder="Costo">
+    <input type="number" id="venta" placeholder="Precio de venta">
+    <input type="file" id="foto" accept="image/*" capture="environment">
+    <button onclick="guardarTenis()">GUARDAR</button>
+</div>
+
+<div class="lista" id="listaTenis"></div>
+
+<script>
+let tenis = JSON.parse(localStorage.getItem("tenis")) || [];
+
+function guardarTenis() {
+    const nombre = document.getElementById("nombre").value;
+    const costo = document.getElementById("costo").value;
+    const venta = document.getElementById("venta").value;
+    const fotoInput = document.getElementById("foto");
+
+    if (!nombre || !costo || !venta || !fotoInput.files[0]) {
+        alert("Completa todos los campos");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function () {
+        tenis.push({
+            nombre,
+            costo,
+            venta,
+            foto: reader.result,
+            vendido: false
+        });
+        localStorage.setItem("tenis", JSON.stringify(tenis));
+        mostrarTenis();
+        limpiar();
+    };
+    reader.readAsDataURL(fotoInput.files[0]);
+}
+
+function mostrarTenis() {
+    const lista = document.getElementById("listaTenis");
+    lista.innerHTML = "";
+
+    tenis.forEach((t, i) => {
+        lista.innerHTML += `
+        <div class="card ${t.vendido ? 'vendido' : ''}">
+            <img src="${t.foto}">
+            <p><strong>${t.nombre}</strong></p>
+            <p>Costo: $${t.costo}</p>
+            <p>Venta: $${t.venta}</p>
+            <div class="botones">
+                <button onclick="marcarVendido(${i})">VENDIDO</button>
+                <button onclick="editarTenis(${i})">EDITAR</button>
+            </div>
+        </div>
+        `;
+    });
+}
+
+function marcarVendido(i) {
+    tenis[i].vendido = true;
+    localStorage.setItem("tenis", JSON.stringify(tenis));
+    mostrarTenis();
+}
+
+function editarTenis(i) {
+    document.getElementById("nombre").value = tenis[i].nombre;
+    document.getElementById("costo").value = tenis[i].costo;
+    document.getElementById("venta").value = tenis[i].venta;
+    tenis.splice(i, 1);
+    localStorage.setItem("tenis", JSON.stringify(tenis));
+    mostrarTenis();
+}
+
+function limpiar() {
+    document.getElementById("nombre").value = "";
+    document.getElementById("costo").value = "";
+    document.getElementById("venta").value = "";
+    document.getElementById("foto").value = "";
+}
+
+mostrarTenis();
+</script>
+
+</body>
+</html>
