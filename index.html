@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventario de Tenis</title>
+<title>Inventario de tenis</title>
 
 <style>
 body{
   font-family: Arial, sans-serif;
-  background:#fff4f4;
+  background:#fff1f3;
   padding:15px;
 }
 
 h1{
   text-align:center;
   color:#7a001f;
-  font-family: "Times New Roman";
+  font-family:"Times New Roman";
 }
 
 .sub{
@@ -27,13 +27,13 @@ h1{
 .formulario{
   background:white;
   padding:15px;
-  border-radius:10px;
+  border-radius:12px;
   margin-bottom:20px;
 }
 
 input, button{
   width:100%;
-  margin:5px 0;
+  margin:6px 0;
   padding:10px;
   border-radius:8px;
   border:1px solid #7a001f;
@@ -48,7 +48,7 @@ button{
 .tenis{
   background:white;
   padding:10px;
-  border-radius:10px;
+  border-radius:12px;
   margin-bottom:15px;
 }
 
@@ -57,13 +57,15 @@ button{
   height:120px;
   object-fit:cover;
   border-radius:10px;
+  display:block;
+  margin-bottom:8px;
 }
 
 .vendido{
-  background:green;
+  background:#2e8b57;
   color:white;
-  padding:5px;
-  border-radius:5px;
+  padding:6px;
+  border-radius:8px;
   text-align:center;
   margin-top:5px;
 }
@@ -83,63 +85,91 @@ button{
 <div class="sub">𝓣𝓮 𝓪𝓶𝓸 𝓹𝓪𝓹𝓲</div>
 
 <div class="formulario">
-  <input type="text" id="nombre" placeholder="Marca o nombre del tenis">
-  <input type="number" id="costo" placeholder="Costo">
-  <input type="number" id="venta" placeholder="Precio de venta">
-  <input type="file" id="foto" accept="image/*" capture="environment">
+  <input id="nombre" placeholder="Marca o modelo">
+  <input id="costo" type="number" placeholder="Costo">
+  <input id="venta" type="number" placeholder="Precio de venta">
+  <input id="foto" type="file" accept="image/*">
   <button onclick="guardar()">Guardar</button>
 </div>
 
 <div id="lista"></div>
 
 <script>
-let lista = JSON.parse(localStorage.getItem("tenis")) || [];
+let tenis = JSON.parse(localStorage.getItem("inventario")) || [];
 
 function guardar(){
-  let nombre=document.getElementById("nombre").value;
-  let costo=document.getElementById("costo").value;
-  let venta=document.getElementById("venta").value;
-  let foto=document.getElementById("foto").files[0];
+  const nombre = nombreInput.value;
+  const costo = costoInput.value;
+  const venta = ventaInput.value;
+  const fotoFile = fotoInput.files[0];
 
-  if(!nombre||!costo||!venta||!foto) return alert("Completa todo");
-
-  let reader=new FileReader();
-  reader.onload=function(){
-    lista.push({nombre,costo,venta,foto:reader.result,vendido:false});
-    localStorage.setItem("tenis",JSON.stringify(lista));
-    mostrar();
+  if(!nombre || !costo || !venta || !fotoFile){
+    alert("Completa todo");
+    return;
   }
-  reader.readAsDataURL(foto);
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    tenis.push({
+      nombre,
+      costo:Number(costo),
+      venta:Number(venta),
+      foto: reader.result,
+      vendido:false
+    });
+
+    localStorage.setItem("inventario", JSON.stringify(tenis));
+    limpiarFormulario();
+    mostrar();
+  };
+  reader.readAsDataURL(fotoFile);
 }
 
 function mostrar(){
-  let html="";
-  lista.forEach((t,i)=>{
-    html+=`
-    <div class="tenis">
+  lista.innerHTML = "";
+  tenis.forEach((t,i)=>{
+    const div = document.createElement("div");
+    div.className = "tenis";
+
+    div.innerHTML = `
       <img src="${t.foto}">
-      <p><b>${t.nombre}</b></p>
+      <b>${t.nombre}</b>
       <p>Costo: $${t.costo}</p>
       <p>Venta: $${t.venta}</p>
-      ${t.vendido?`<div class="vendido">VENDIDO<br>Ganancia: $${t.venta-t.costo}</div>`:
-      `<button onclick="vender(${i})">VENDIDO</button>`}
+      ${t.vendido 
+        ? `<div class="vendido">VENDIDO<br>Ganancia: $${t.venta - t.costo}</div>`
+        : `<button onclick="vender(${i})">VENDIDO</button>`
+      }
       <button class="borrar" onclick="borrar(${i})">Borrar</button>
-    </div>`;
+    `;
+    lista.appendChild(div);
   });
-  document.getElementById("lista").innerHTML=html;
 }
 
 function vender(i){
-  lista[i].vendido=true;
-  localStorage.setItem("tenis",JSON.stringify(lista));
+  tenis[i].vendido = true;
+  localStorage.setItem("inventario", JSON.stringify(tenis));
   mostrar();
 }
 
 function borrar(i){
-  lista.splice(i,1);
-  localStorage.setItem("tenis",JSON.stringify(lista));
+  tenis.splice(i,1);
+  localStorage.setItem("inventario", JSON.stringify(tenis));
   mostrar();
 }
+
+function limpiarFormulario(){
+  nombreInput.value="";
+  costoInput.value="";
+  ventaInput.value="";
+  fotoInput.value="";
+}
+
+const nombreInput = document.getElementById("nombre");
+const costoInput = document.getElementById("costo");
+const ventaInput = document.getElementById("venta");
+const fotoInput = document.getElementById("foto");
+const lista = document.getElementById("lista");
 
 mostrar();
 </script>
