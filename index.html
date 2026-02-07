@@ -2,135 +2,148 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventario de Tenis</title>
+
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
-    padding: 20px;
+body{
+  font-family: Arial, sans-serif;
+  background:#fff4f4;
+  padding:15px;
 }
-h1 {
-    text-align: center;
+
+h1{
+  text-align:center;
+  color:#7a001f;
+  font-family: "Times New Roman";
 }
-.formulario, .lista {
-    background: white;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 8px;
+
+.sub{
+  text-align:center;
+  color:red;
+  margin-bottom:20px;
 }
-input, button {
-    width: 100%;
-    margin: 5px 0;
-    padding: 8px;
+
+.formulario{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:20px;
 }
-.card {
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 10px;
+
+input, button{
+  width:100%;
+  margin:5px 0;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #7a001f;
 }
-.card img {
-    max-width: 100%;
-    border-radius: 5px;
+
+button{
+  background:#7a001f;
+  color:white;
+  font-weight:bold;
 }
-.vendido {
-    background: #d4edda;
+
+.tenis{
+  background:white;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:15px;
 }
-.botones button {
-    margin-top: 5px;
+
+.tenis img{
+  width:120px;
+  height:120px;
+  object-fit:cover;
+  border-radius:10px;
+}
+
+.vendido{
+  background:green;
+  color:white;
+  padding:5px;
+  border-radius:5px;
+  text-align:center;
+  margin-top:5px;
+}
+
+.borrar{
+  background:#ccc;
+  color:black;
+  font-size:12px;
+  padding:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>👟 Inventario de Tenis</h1>
+<h1>𝑰𝒏𝒗𝒆𝒏𝒕𝒂𝒓𝒊𝒐 𝒅𝒆 𝒕𝒆𝒏𝒊𝒔</h1>
+<div class="sub">𝓣𝓮 𝓪𝓶𝓸 𝓹𝓪𝓹𝓲</div>
 
 <div class="formulario">
-    <h3>Agregar Tenis</h3>
-    <input type="text" id="nombre" placeholder="Nombre o marca del tenis">
-    <input type="number" id="costo" placeholder="Costo">
-    <input type="number" id="venta" placeholder="Precio de venta">
-    <input type="file" id="foto" accept="image/*" capture="environment">
-    <button onclick="guardarTenis()">GUARDAR</button>
+  <input type="text" id="nombre" placeholder="Marca o nombre del tenis">
+  <input type="number" id="costo" placeholder="Costo">
+  <input type="number" id="venta" placeholder="Precio de venta">
+  <input type="file" id="foto" accept="image/*" capture="environment">
+  <button onclick="guardar()">Guardar</button>
 </div>
 
-<div class="lista" id="listaTenis"></div>
+<div id="lista"></div>
 
 <script>
-let tenis = JSON.parse(localStorage.getItem("tenis")) || [];
+let lista = JSON.parse(localStorage.getItem("tenis")) || [];
 
-function guardarTenis() {
-    const nombre = document.getElementById("nombre").value;
-    const costo = document.getElementById("costo").value;
-    const venta = document.getElementById("venta").value;
-    const fotoInput = document.getElementById("foto");
+function guardar(){
+  let nombre=document.getElementById("nombre").value;
+  let costo=document.getElementById("costo").value;
+  let venta=document.getElementById("venta").value;
+  let foto=document.getElementById("foto").files[0];
 
-    if (!nombre || !costo || !venta || !fotoInput.files[0]) {
-        alert("Completa todos los campos");
-        return;
-    }
+  if(!nombre||!costo||!venta||!foto) return alert("Completa todo");
 
-    const reader = new FileReader();
-    reader.onload = function () {
-        tenis.push({
-            nombre,
-            costo,
-            venta,
-            foto: reader.result,
-            vendido: false
-        });
-        localStorage.setItem("tenis", JSON.stringify(tenis));
-        mostrarTenis();
-        limpiar();
-    };
-    reader.readAsDataURL(fotoInput.files[0]);
+  let reader=new FileReader();
+  reader.onload=function(){
+    lista.push({nombre,costo,venta,foto:reader.result,vendido:false});
+    localStorage.setItem("tenis",JSON.stringify(lista));
+    mostrar();
+  }
+  reader.readAsDataURL(foto);
 }
 
-function mostrarTenis() {
-    const lista = document.getElementById("listaTenis");
-    lista.innerHTML = "";
-
-    tenis.forEach((t, i) => {
-        lista.innerHTML += `
-        <div class="card ${t.vendido ? 'vendido' : ''}">
-            <img src="${t.foto}">
-            <p><strong>${t.nombre}</strong></p>
-            <p>Costo: $${t.costo}</p>
-            <p>Venta: $${t.venta}</p>
-            <div class="botones">
-                <button onclick="marcarVendido(${i})">VENDIDO</button>
-                <button onclick="editarTenis(${i})">EDITAR</button>
-            </div>
-        </div>
-        `;
-    });
+function mostrar(){
+  let html="";
+  lista.forEach((t,i)=>{
+    html+=`
+    <div class="tenis">
+      <img src="${t.foto}">
+      <p><b>${t.nombre}</b></p>
+      <p>Costo: $${t.costo}</p>
+      <p>Venta: $${t.venta}</p>
+      ${t.vendido?`<div class="vendido">VENDIDO<br>Ganancia: $${t.venta-t.costo}</div>`:
+      `<button onclick="vender(${i})">VENDIDO</button>`}
+      <button class="borrar" onclick="borrar(${i})">Borrar</button>
+    </div>`;
+  });
+  document.getElementById("lista").innerHTML=html;
 }
 
-function marcarVendido(i) {
-    tenis[i].vendido = true;
-    localStorage.setItem("tenis", JSON.stringify(tenis));
-    mostrarTenis();
+function vender(i){
+  lista[i].vendido=true;
+  localStorage.setItem("tenis",JSON.stringify(lista));
+  mostrar();
 }
 
-function editarTenis(i) {
-    document.getElementById("nombre").value = tenis[i].nombre;
-    document.getElementById("costo").value = tenis[i].costo;
-    document.getElementById("venta").value = tenis[i].venta;
-    tenis.splice(i, 1);
-    localStorage.setItem("tenis", JSON.stringify(tenis));
-    mostrarTenis();
+function borrar(i){
+  lista.splice(i,1);
+  localStorage.setItem("tenis",JSON.stringify(lista));
+  mostrar();
 }
 
-function limpiar() {
-    document.getElementById("nombre").value = "";
-    document.getElementById("costo").value = "";
-    document.getElementById("venta").value = "";
-    document.getElementById("foto").value = "";
-}
-
-mostrarTenis();
+mostrar();
 </script>
 
 </body>
 </html>
+
