@@ -24,11 +24,11 @@ h1{
   margin-bottom:20px;
 }
 
-.formulario{
+.formulario, .tenis{
   background:white;
-  padding:15px;
+  padding:12px;
   border-radius:12px;
-  margin-bottom:20px;
+  margin-bottom:15px;
 }
 
 input, button{
@@ -45,20 +45,13 @@ button{
   font-weight:bold;
 }
 
-.tenis{
-  background:white;
-  padding:10px;
-  border-radius:12px;
-  margin-bottom:15px;
-}
-
 .tenis img{
-  width:120px;
-  height:120px;
+  width:110px;
+  height:110px;
   object-fit:cover;
   border-radius:10px;
   display:block;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
 
 .vendido{
@@ -67,14 +60,13 @@ button{
   padding:6px;
   border-radius:8px;
   text-align:center;
-  margin-top:5px;
+  margin-top:6px;
 }
 
 .borrar{
   background:#ccc;
   color:black;
   font-size:12px;
-  padding:5px;
 }
 </style>
 </head>
@@ -95,70 +87,87 @@ button{
 <div id="lista"></div>
 
 <script>
-let tenis = JSON.parse(localStorage.getItem("inventario")) || [];
+let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
 
 function guardar(){
   const nombre = nombreInput.value;
   const costo = costoInput.value;
   const venta = ventaInput.value;
-  const fotoFile = fotoInput.files[0];
+  const file = fotoInput.files[0];
 
-  if(!nombre || !costo || !venta || !fotoFile){
+  if(!nombre || !costo || !venta || !file){
     alert("Completa todo");
     return;
   }
 
+  const img = new Image();
   const reader = new FileReader();
-  reader.onload = () => {
-    tenis.push({
+
+  reader.onload = e => {
+    img.src = e.target.result;
+  };
+
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    const size = 300; // 🔥 tamaño pequeño
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, size, size);
+
+    const fotoComprimida = canvas.toDataURL("image/jpeg", 0.6);
+
+    inventario.push({
       nombre,
       costo:Number(costo),
       venta:Number(venta),
-      foto: reader.result,
+      foto: fotoComprimida,
       vendido:false
     });
 
-    localStorage.setItem("inventario", JSON.stringify(tenis));
-    limpiarFormulario();
+    localStorage.setItem("inventario", JSON.stringify(inventario));
+    limpiar();
     mostrar();
   };
-  reader.readAsDataURL(fotoFile);
+
+  reader.readAsDataURL(file);
 }
 
 function mostrar(){
-  lista.innerHTML = "";
-  tenis.forEach((t,i)=>{
-    const div = document.createElement("div");
-    div.className = "tenis";
-
-    div.innerHTML = `
-      <img src="${t.foto}">
-      <b>${t.nombre}</b>
-      <p>Costo: $${t.costo}</p>
-      <p>Venta: $${t.venta}</p>
-      ${t.vendido 
-        ? `<div class="vendido">VENDIDO<br>Ganancia: $${t.venta - t.costo}</div>`
-        : `<button onclick="vender(${i})">VENDIDO</button>`
-      }
-      <button class="borrar" onclick="borrar(${i})">Borrar</button>
-    `;
-    lista.appendChild(div);
+  lista.innerHTML="";
+  inventario.forEach((t,i)=>{
+    lista.innerHTML += `
+      <div class="tenis">
+        <img src="${t.foto}">
+        <b>${t.nombre}</b>
+        <p>Costo: $${t.costo}</p>
+        <p>Venta: $${t.venta}</p>
+        ${t.vendido 
+          ? `<div class="vendido">VENDIDO<br>Ganancia: $${t.venta - t.costo}</div>`
+          : `<button onclick="vender(${i})">VENDIDO</button>`
+        }
+        <button class="borrar" onclick="borrar(${i})">Borrar</button>
+      </div>`;
   });
 }
 
 function vender(i){
-  tenis[i].vendido = true;
-  localStorage.setItem("inventario", JSON.stringify(tenis));
-  mostrar();
+  inventario[i].vendido = true;
+  guardarLS();
 }
 
 function borrar(i){
-  tenis.splice(i,1);
-  localStorage.setItem("inventario", JSON.stringify(tenis));
+  inventario.splice(i,1);
+  guardarLS();
+}
+
+function guardarLS(){
+  localStorage.setItem("inventario", JSON.stringify(inventario));
   mostrar();
 }
 
-function limpiarFormulario(){
+function limpiar(){
   nombreInput.value="";
   costoInput.value="";
   ventaInput.value="";
