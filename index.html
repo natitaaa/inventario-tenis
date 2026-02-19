@@ -146,6 +146,18 @@ button{
   top:10px;
   left:10px;
   z-index:1000;
+
+  /* MEJORA DE CALIDAD DE IMÁGENES */
+img {
+  image-rendering: auto;
+  -ms-interpolation-mode: bicubic;
+}
+
+.miniaturas img,
+.modal img {
+  object-fit: contain;
+}
+
 }
 
 </style>
