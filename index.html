@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventario de tenis</title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7a001f">
+
 <style>
 body{
   font-family: Arial, sans-serif;
@@ -21,7 +24,13 @@ h1{
 .sub{
   text-align:center;
   color:red;
-  margin-bottom:20px;
+  margin-bottom:10px;
+}
+
+.contador{
+  text-align:center;
+  font-size:14px;
+  margin-bottom:15px;
 }
 
 .formulario, .tenis{
@@ -45,13 +54,18 @@ button{
   font-weight:bold;
 }
 
-.tenis img{
-  width:110px;
-  height:110px;
+.miniaturas{
+  display:flex;
+  gap:6px;
+  margin-bottom:8px;
+}
+
+.miniaturas img{
+  width:60px;
+  height:60px;
   object-fit:cover;
-  border-radius:10px;
-  display:block;
-  margin-bottom:6px;
+  border-radius:8px;
+  cursor:pointer;
 }
 
 .vendido{
@@ -63,124 +77,248 @@ button{
   margin-top:6px;
 }
 
+.cancelar{
+  background:#555;
+}
+
 .borrar{
   background:#ccc;
   color:black;
   font-size:12px;
 }
+
+.admin-btn{
+  position:fixed;
+  bottom:10px;
+  right:10px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#7a001f;
+  color:white;
+  font-size:18px;
+}
+
+/* BOTÓN SALIR ADMIN */
+.salir{
+  background:#999;
+  margin-bottom:15px;
+}
+
+/* MODAL GALERÍA */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+}
+
+.modal img{
+  max-width:90%;
+  max-height:80%;
+  border-radius:10px;
+}
+
+.modal .nav{
+  margin-top:10px;
+}
+
+.modal button{
+  width:auto;
+  margin:0 10px;
+}
+
+.salir-flecha{
+  width:44px;
+  height:44px;
+  padding:0;
+  border-radius:50%;
+  background:#7a001f;
+  color:white;
+  font-size:20px;
+  border:none;
+  cursor:pointer;
+
+  position:fixed;
+  top:10px;
+  left:10px;
+  z-index:1000;
+}
+
 </style>
 </head>
 
 <body>
 
 <h1>𝑰𝒏𝒗𝒆𝒏𝒕𝒂𝒓𝒊𝒐 𝒅𝒆 𝒕𝒆𝒏𝒊𝒔</h1>
-<div class="sub">𝓣𝓮 𝓪𝓶𝓸 𝓹𝓪𝓹𝓲</div>
+<div class="sub" id="mensajePapi" style="display:none">𝓣𝓮 𝓪𝓶𝓸 𝓹𝓪𝓹𝓲</div>
 
-<div class="formulario">
+<div class="contador" id="contador"></div>
+
+<div class="formulario" id="formulario" style="display:none">
   <input id="nombre" placeholder="Marca o modelo">
+  <input id="numero" placeholder="Número de calzado">
   <input id="costo" type="number" placeholder="Costo">
   <input id="venta" type="number" placeholder="Precio de venta">
-  <input id="foto" type="file" accept="image/*">
+  <input id="foto" type="file" accept="image/*" multiple>
+  <small>Puedes subir hasta 4 fotos</small>
   <button onclick="guardar()">Guardar</button>
 </div>
 
+<button id="salirAdmin" class="salir-flecha" style="display:none" onclick="salirAdmin()">
+  ⬅️
+</button>
+
 <div id="lista"></div>
 
+<button class="admin-btn" onclick="modoAdmin()">⚙️</button>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <img id="imgModal">
+  <div class="nav">
+    <button onclick="anterior()">◀</button>
+    <button onclick="siguiente()">▶</button>
+    <button onclick="cerrarModal()">❌</button>
+  </div>
+</div>
+
 <script>
-let inventario = JSON.parse(localStorage.getItem("inventario")) || [];
+let admin=false;
+let inventario=JSON.parse(localStorage.getItem("inventario"))||[];
+let fotosModal=[];
+let indexFoto=0;
+
+function modoAdmin(){
+  if(prompt("Clave:")==="Coffe28"){
+    admin=true;
+    formulario.style.display="block";
+    mensajePapi.style.display="block";
+    salirAdminBtn(true);
+    mostrar();
+  }
+}
+
+function salirAdmin(){
+  admin=false;
+  formulario.style.display="none";
+  mensajePapi.style.display="none";
+  salirAdminBtn(false);
+  mostrar();
+}
+
+function salirAdminBtn(mostrarBtn){
+  document.getElementById("salirAdmin").style.display = mostrarBtn ? "block" : "none";
+}
 
 function guardar(){
-  const nombre = nombreInput.value;
-  const costo = costoInput.value;
-  const venta = ventaInput.value;
-  const file = fotoInput.files[0];
-
-  if(!nombre || !costo || !venta || !file){
+  const files=[...foto.files].slice(0,4);
+  if(!nombre.value||!numero.value||!costo.value||!venta.value||files.length===0){
     alert("Completa todo");
     return;
   }
 
-  const img = new Image();
-  const reader = new FileReader();
+  let fotos=[];
+  let cargadas=0;
 
-  reader.onload = e => {
-    img.src = e.target.result;
-  };
-
-  img.onload = () => {
-    const canvas = document.createElement("canvas");
-    const size = 300; // 🔥 tamaño pequeño
-    canvas.width = size;
-    canvas.height = size;
-
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, size, size);
-
-    const fotoComprimida = canvas.toDataURL("image/jpeg", 0.6);
-
-    inventario.push({
-      nombre,
-      costo:Number(costo),
-      venta:Number(venta),
-      foto: fotoComprimida,
-      vendido:false
-    });
-
-    localStorage.setItem("inventario", JSON.stringify(inventario));
-    limpiar();
-    mostrar();
-  };
-
-  reader.readAsDataURL(file);
+  files.forEach(file=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=e=>img.src=e.target.result;
+    img.onload=()=>{
+      const c=document.createElement("canvas");
+      c.width=300;c.height=300;
+      c.getContext("2d").drawImage(img,0,0,300,300);
+      fotos.push(c.toDataURL("image/jpeg",0.7));
+      if(++cargadas===files.length){
+        inventario.push({
+          nombre:nombre.value,
+          numero:numero.value,
+          costo:+costo.value,
+          venta:+venta.value,
+          fotos:fotos,
+          vendido:false
+        });
+        guardarLS();
+        nombre.value=numero.value=costo.value=venta.value=foto.value="";
+      }
+    }
+    reader.readAsDataURL(file);
+  });
 }
 
 function mostrar(){
   lista.innerHTML="";
+  contador.innerText = admin ? `Pares disponibles: ${inventario.length}` : "";
+
   inventario.forEach((t,i)=>{
-    lista.innerHTML += `
+    lista.innerHTML+=`
       <div class="tenis">
-        <img src="${t.foto}">
+        <div class="miniaturas">
+          ${t.fotos.map((f,j)=>`
+            <img src="${f}" onclick="abrirGaleria(${i},${j})">
+          `).join("")}
+        </div>
+
         <b>${t.nombre}</b>
-        <p>Costo: $${t.costo}</p>
-        <p>Venta: $${t.venta}</p>
-        ${t.vendido 
-          ? `<div class="vendido">VENDIDO<br>Ganancia: $${t.venta - t.costo}</div>`
-          : `<button onclick="vender(${i})">VENDIDO</button>`
-        }
-        <button class="borrar" onclick="borrar(${i})">Borrar</button>
-      </div>`;
+        <p>Número: ${t.numero}</p>
+        <p>Precio: $${t.venta}</p>
+
+        ${admin?`
+          <p>Costo: $${t.costo}</p>
+
+          ${t.vendido
+            ? `<div class="vendido">
+                 VENDIDO<br>
+                 Ganancia: $${t.venta - t.costo}
+               </div>
+               <button class="cancelar" onclick="cancelar(${i})">Cancelar vendido</button>`
+            : `<button onclick="vender(${i})">VENDIDO</button>`
+          }
+
+          <button class="borrar" onclick="confirmarBorrar(${i})">Borrar</button>
+        `:""}
+      </div>
+    `;
   });
 }
 
-function vender(i){
-  inventario[i].vendido = true;
-  guardarLS();
+function vender(i){ inventario[i].vendido=true; guardarLS(); }
+function cancelar(i){ inventario[i].vendido=false; guardarLS(); }
+
+function confirmarBorrar(i){
+  if(confirm("¿Seguro que quieres borrar este par?")){
+    inventario.splice(i,1);
+    guardarLS();
+  }
 }
 
-function borrar(i){
-  inventario.splice(i,1);
-  guardarLS();
+function abrirGaleria(i,j){
+  fotosModal=inventario[i].fotos;
+  indexFoto=j;
+  imgModal.src=fotosModal[indexFoto];
+  modal.style.display="flex";
 }
+
+function siguiente(){ indexFoto=(indexFoto+1)%fotosModal.length; imgModal.src=fotosModal[indexFoto]; }
+function anterior(){ indexFoto=(indexFoto-1+fotosModal.length)%fotosModal.length; imgModal.src=fotosModal[indexFoto]; }
+function cerrarModal(){ modal.style.display="none"; }
 
 function guardarLS(){
-  localStorage.setItem("inventario", JSON.stringify(inventario));
+  localStorage.setItem("inventario",JSON.stringify(inventario));
   mostrar();
 }
 
-function limpiar(){
-  nombreInput.value="";
-  costoInput.value="";
-  ventaInput.value="";
-  fotoInput.value="";
-}
-
-const nombreInput = document.getElementById("nombre");
-const costoInput = document.getElementById("costo");
-const ventaInput = document.getElementById("venta");
-const fotoInput = document.getElementById("foto");
-const lista = document.getElementById("lista");
-
 mostrar();
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("service-worker.js");
+}
 </script>
 
 </body>
